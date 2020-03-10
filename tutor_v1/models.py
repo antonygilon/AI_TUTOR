@@ -106,12 +106,11 @@ class DiagnosticResult(models.Model):
 
 
 class StudentResponse(models.Model):
-	student_id = models.ForeignKey(Student,on_delete = models.CASCADE)
-	problem_id = models.ForeignKey(Problem,on_delete = models.CASCADE)
-	answer = models.CharField(max_length = 100)
+	student = models.ForeignKey(Student,on_delete = models.CASCADE)
+	problem = models.ForeignKey(Problem,on_delete = models.CASCADE)
+	skill = models.ForeignKey(Skill,on_delete = models.CASCADE)
 	correct_or_wrong = models.BooleanField()
-	time_taken = models.DateTimeField()
-	test_type = models.CharField(choices = PROBLEM_SUBTYPE,default = PRACTICE,max_length = 50)
+	time_taken = models.DateTimeField(auto_now_add = True)
 
 
 class DiagnosticTestResponse(models.Model):
@@ -135,6 +134,16 @@ class Probability(models.Model):
 	skill_id = models.ForeignKey(Skill, on_delete = models.CASCADE)
 	completed = models.BooleanField(default = False)
 
+class Irt(models.Model):
+	question = models.ForeignKey(Problem, on_delete = models.CASCADE)
+	discrimination = models.FloatField()
+	difficulty = models.FloatField()
+	pseudo_guess = models.FloatField()
+	asymptote = models.FloatField()
+
+class SkillStats(models.Model):
+	student = models.ForeignKey(Student, on_delete = models.CASCADE)
+	skill  = models.ForeignKey(Skill, on_delete = models.CASCADE)
+	theta = models.FloatField()
 
 
-	
