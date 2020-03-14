@@ -5,7 +5,7 @@ from django import forms
 from django.http import HttpResponse
 from django.shortcuts import render
 from .forms import UploadQuestions
-from .models import Skill,AnswerText,AnswerChoice,Problem, Probability, Student, DiagnosticResult, Irt, SkillStats, StudentResponse
+from .models import Skill,AnswerText,AnswerChoice,Problem, Probability, Student, DiagnosticResult, Irt, SkillStats, StudentResponse, DiagnosticTestResponse
 import string
 import subprocess
 import os
@@ -16,8 +16,6 @@ from catsim.selection import MaxInfoSelector
 from catsim.estimation import DifferentialEvolutionEstimator
 
 # Create your views here.
-
-
 
 def insert_questions(questions_file, mapping_file):
 	qf = pd.read_csv(questions_file)
@@ -99,9 +97,9 @@ def compute_knowledge_graph(data_dict,student_id,update = False):
 	
 	score = 0
 	if update:
-		file = open("tutor_v1/datasets/hmmdata.txt","a+")
+		file = open("tutor_v2/datasets/hmmdata.txt","a+")
 	else:
-		file = open("tutor_v1/datasets/hmmdata.txt","w+")
+		file = open("tutor_v2/datasets/hmmdata.txt","w+")
 	for key,value in data_dict.items():
 		correct_or_wrong = 2
 		hmm_data = []
@@ -133,11 +131,10 @@ def compute_knowledge_graph(data_dict,student_id,update = False):
 		data_string = '\t'.join(hmm_data)
 		file.write(data_string)
 
-	result = DiagnosticResult(student_id = current_user, score = score)
-	result.save()
+
 	file.close()
-	os.system("hmm-scalable/./trainhmm tutor_v1/datasets/hmmdata.txt tutor_v1/datasets/knowledgegraph.txt")
-	file = open("tutor_v1/datasets/knowledgegraph.txt","r")
+	os.system("hmm-scalable/./trainhmm tutor_v2/datasets/hmmdata.txt tutor_v2/datasets/knowledgegraph.txt")
+	file = open("tutor_v2/datasets/knowledgegraph.txt","r")
 	data_array = file.readlines()
 	data_array = data_array[7:]
 	final_data_array = []
@@ -182,13 +179,28 @@ def create_diagnostic_test(request):
 		if 'csrfmiddlewaretoken' in data_dict:
 			del data_dict['csrfmiddlewaretoken']
 		student_id = request.session['student']
-		compute_knowledge_graph(data_dict,student_id)
-		return HttpResponse("Knowledge graph updated Successfully")
+		student = Student.objects.get(id = student_id)
+		evaluation = compute_knowledge_graph(data_dict,student_id)
+		score = 0
+		for key,value in evaluation.items():
+			question  = Problem.objects.get(id = int(key))
+			skill = question.skill_id
+			correct_or_wrong = None
+			if value == 2:
+				correct_or_wrong = 0
+			else:
+				correct_or_wrong = 1
+				score = score + 1
+			Response = DiagnosticTestResponse(student_id = student, problem_id = question, correct_or_wrong = correct_or_wrong, skill = skill)
+			Response.save()
+		print(evaluation)
+		result = DiagnosticResult(student_id = student, score = score)
+		result.save()
+		return HttpResponse("Successfully completed diagnostic your score is:{0}".format(score))
 
 	else:
 		diagnostic_test = Problem.objects.filter(diagnostic_test=1)
 		return render(request,'diagnostic_test.html',{'Questions': diagnostic_test})
-
 
 
 def update_hmm(data_dict,student_id,eval = False):
@@ -200,7 +212,7 @@ def update_hmm(data_dict,student_id,eval = False):
 	prob_obj = Probability.objects.filter(completed = 0)
 	current_skill = Problem.objects.get(id = question_id).skill_id
 	questions = Problem.objects.filter(skill_id = current_skill.id)
-	test_file = open('tutor_v1/datasets/hmmtest.txt','w+')
+	test_file = open('tutor_v2/datasets/hmmtest.txt','w+')
 	current_user = Student.objects.get(id =student_id)
 	for question in questions:
 		write_array = []
@@ -212,8 +224,8 @@ def update_hmm(data_dict,student_id,eval = False):
 		test_file.write(data_string)
 		test_file.write('\n')
 	test_file.close()
-	os.system("hmm-scalable/./predicthmm -p 1 tutor_v1/datasets/hmmtest.txt tutor_v1/datasets/knowledgegraph.txt tutor_v1/datasets/predictions.txt")
-	pred_file = open("tutor_v1/datasets/predictions.txt","r")
+	os.system("hmm-scalable/./predicthmm -p 1 tutor_v2/datasets/hmmtest.txt tutor_v2/datasets/knowledgegraph.txt tutor_v2/datasets/predictions.txt")
+	pred_file = open("tutor_v2/datasets/predictions.txt","r")
 	diff_array = []
 	for line in pred_file.readlines():
 		diff = line.split('\t')
@@ -221,17 +233,14 @@ def update_hmm(data_dict,student_id,eval = False):
 
 	min_index = np.argmax(np.array(diff_array))
 	pred_file.close()
-	test_file = open('tutor_v1/datasets/hmmtest.txt')
+	test_file = open('tutor_v2/datasets/hmmtest.txt')
 	test_array = test_file.readlines()
 	next_question = test_array[min_index].split('\t')[2]
 	if eval:
 		return evaluation
 
 
-
-
 def random_irt(request):
-
 	questions = Problem.objects.all()
 	for question in questions:
 		discrimination = random.uniform(0.8,2.5)
@@ -247,7 +256,7 @@ def random_irt(request):
 
 def random_theta(request):
 	skills = Skill.objects.all()
-	student = Student.objects.get(pk=1)
+	student = Student.objects.get(id = request.session['student'])
 	for skill in skills:
 		theta = RandomInitializer().initialize()
 		obj = SkillStats(student = student, skill = skill, theta = theta)
@@ -260,36 +269,13 @@ def render_homepage(request):
 	return render(request,'homepage.html',{'skills':skills})
 
 
+
+
 def initialize_skill(request,id):
-	current_user = Student.objects.get(pk = 1)
+	current_user = Student.objects.get(id = request.session['student'])
 	if request.method == 'GET':
-		skill_id = id
-		skill = Skill.objects.get(id = skill_id)
-		random_theta = random.uniform(-4,-4)
-		SkillStats.objects.filter(skill = skill).update(theta = random_theta)
-		theta = SkillStats.objects.get(skill = skill).theta
-		problems = Problem.objects.filter(skill_id = skill)
-		irt_params = []
-		index_problem = {}
-		for id,problem in enumerate(problems):
-			param = []
-			index_problem[id] = problem.id
-			irt = Irt.objects.get(question = problem)
-			param.append(irt.discrimination)
-			param.append(irt.difficulty)
-			param.append(irt.pseudo_guess)
-			param.append(irt.asymptote)
-			irt_params.append(param)
-
-		irt_params = np.array(irt_params)
-		selector = MaxInfoSelector().select(items= irt_params,administered_items=[],est_theta= theta)
-		print(selector)
-		next_question = Problem.objects.get(id = index_problem[selector])
-		print(next_question)
-		response_dict = {'question':next_question}
-		return render(request,'problem.html',response_dict)
-
-	elif request.method == 'POST':
+		skill = Skill.objects.get(id = id)
+	else:
 		data_dict = dict(request.POST)
 		print("Data dict is",data_dict)
 		if 'csrfmiddlewaretoken' in data_dict:
@@ -301,23 +287,182 @@ def initialize_skill(request,id):
 			question_id = key
 			if value == 2:
 				evaluation[key] = 0
-
-
 		problem  = Problem.objects.get(id = question_id)
 		skill = problem.skill_id
-		answer_sequence = []
 		new_response = StudentResponse(student = current_user, problem = problem, correct_or_wrong = evaluation[question_id],skill = skill)
 		new_response.save()
+	attempted_questions = StudentResponse.objects.filter(skill  = skill,student = current_user)
+	administered_items = None
+	if not attempted_questions:
+		current_theta = random.uniform(-4,4)
+		responses = DiagnosticTestResponse.objects.filter(student_id = current_user,skill = skill)
+		administered_items = {response.problem_id.id:response.correct_or_wrong for response in responses }
+	else:
+		current_theta = SkillStats.objects.get(skill = skill).theta
+		responses = StudentResponse.objects.filter(student_id = current_user,skill = skill)
+		administered_items = {response.problem.id:response.correct_or_wrong for response in responses }
+	all_problems = Problem.objects.filter(skill_id = skill)
+	
+	index_problem = {}
+	index_list = []
+	answer_sequence = []
+	estimator_params = []
+	irt_params = []
+	for id,problem in enumerate(all_problems):
+		irt_param = []
+		estimator_param = []
+		index_problem[id] = problem.id
+		irt = Irt.objects.get(question = problem)
+		irt_param.append(irt.discrimination)
+		irt_param.append(irt.difficulty)
+		irt_param.append(irt.pseudo_guess)
+		irt_param.append(irt.asymptote)
+		irt_params.append(irt_param)
+		if problem.id in administered_items:
+			estimator_param = []
+			index_list.append(id)
+			estimator_param.append(irt.discrimination)
+			estimator_param.append(irt.difficulty)
+			estimator_param.append(irt.pseudo_guess)
+			estimator_param.append(irt.asymptote)
+			answer_sequence.append(int(administered_items[problem.id]))
+			estimator_params.append(estimator_param)
+	estimator_params = np.array(estimator_params)
+	irt_params = np.array(irt_params)
+	estimator = DifferentialEvolutionEstimator(bounds = (-4,4))
+	print("Response Vector: ", answer_sequence)
+	print("Administered items: ",estimator_params)
+	print("Current Theta :",current_theta)
+	new_theta = estimator.estimate(response_vector = answer_sequence, administered_items = estimator_params, current_theta = current_theta)
+	print("New Theta is:",new_theta)
+	SkillStats.objects.filter(skill = skill).update(theta = new_theta)
+	if len(all_problems) == len(index_list):
+			return render(request,'errorpage.html',{'message':'Sorry we are out of problems for this skill. We are still working on it and it will be uploaded soon!'})
+
+	print("IRT PARAMS: ",irt_params)
+	print("Administered Items:",index_list)
+	selector = MaxInfoSelector().select(items= irt_params,administered_items=index_list,est_theta= new_theta)
+	print(selector)
+	next_question = Problem.objects.get(id = index_problem[selector])
+	print(next_question)
+	response_dict = {'question':next_question,'theta':new_theta}
+	pred_file = open("tutor_v2/datasets/predictions.txt","r")
+	diff_array = []
+	for line in pred_file.readlines():
+		diff = line.split('\t')
+		diff_array.append(float(diff[0]))
+	mastery = max(diff_array)
+	response_dict['mastery'] = str(mastery*100)+'%'
+	return render(request,'problem.html',response_dict)
+
+
+
+"""def initialize_skill(request,id):
+	current_user = Student.objects.get(id = request.session['student'])
+	skill = Skill.objects.get(id = id)
+	attempted_questions = StudentResponse.objects.filter(skill  = skill,student = current_user)
+	if request.method == 'GET' and not attempted_questions:
+	
+		skill_id = id
+		all_problems = Problem.objects.filter(skill_id = skill)
+		if not attempted_questions:
+			current_theta = random.uniform(-4,4)
+			responses = DiagnosticTestResponse.objects.filter(student_id = current_user,skill = skill)
+		else:
+			current_theta = SkillStats.objects.get(skill = skill).theta
+			responses = StudentResponse.objects.filter(student_id = current_user,skill = skill)
+		administered_items = {response.problem_id.id:response.correct_or_wrong for response in responses }
+		index_problem = {}
+		index_list = []
+		answer_sequence = []
+		estimator_params = []
+		for id,problem in enumerate(all_problems):
+			irt_param = []
+			estimator_param = []
+			index_problem[id] = problem.id
+			irt = Irt.objects.get(question = problem)
+			if problem.id in administered_items:
+				param = []
+				estimator_param = []
+				index_list.append(id)
+				param.append(irt.discrimination)
+				param.append(irt.difficulty)
+				param.append(irt.pseudo_guess)
+				param.append(irt.asymptote)
+				estimator_param.append(irt.discrimination)
+				estimator_param.append(irt.difficulty)
+				estimator_param.append(irt.pseudo_guess)
+				estimator_param.append(irt.asymptote)
+				answer_sequence.append(int(administered_items[problem.id]))
+				estimator_params.append(estimator_param)
+		estimator_params = np.array(estimator_params)
+
+		estimator = DifferentialEvolutionEstimator(bounds = (-4,4))
+		new_theta = estimator.estimate(response_vector = answer_sequence, administered_items = estimator_params, current_theta = current_theta)
+		SkillStats.objects.filter(skill = skill).update(theta = new_theta)
+		theta = SkillStats.objects.get(skill = skill).theta
+		problems = Problem.objects.filter(skill_id = skill)
+		irt_params = []
+		index_problem = {}
+		for id,problem in enumerate(problems):
+			param = []
+			index_problem[id] = problem.id
+			irt = Irt.objects.get(question = problem)
+
+			param.append(irt.discrimination)
+			param.append(irt.difficulty)
+			param.append(irt.pseudo_guess)
+			param.append(irt.asymptote)
+			irt_params.append(param)
+		irt_params = np.array(irt_params)
+		selector = MaxInfoSelector().select(items= irt_params,administered_items=[],est_theta= theta)
+		print(selector)
+		next_question = Problem.objects.get(id = index_problem[selector])
+		print(next_question)
+		response_dict = {'question':next_question}
+		pred_file = open("tutor_v2/datasets/predictions.txt","r")
+		diff_array = []
+		for line in pred_file.readlines():
+			diff = line.split('\t')
+			diff_array.append(float(diff[0]))
+		mastery = max(diff_array)
+		response_dict['mastery'] = str(mastery*100)+'%'
+		return render(request,'problem.html',response_dict)
+
+
+
+	elif request.method == 'POST':
+
+
+	elif not attempted_questions and request.method == 'POST' or :
+		print("Trigger")
+		if request.method == 'POST':
+			data_dict = dict(request.POST)
+			print("Data dict is",data_dict)
+			if 'csrfmiddlewaretoken' in data_dict:
+				del data_dict['csrfmiddlewaretoken']
+			evaluation = update_hmm(data_dict,current_user.id,eval = True)
+			print(evaluation)
+			question_id = None
+			for key,value in evaluation.items():
+				question_id = key
+				if value == 2:
+					evaluation[key] = 0
+			problem  = Problem.objects.get(id = question_id)
+			skill = problem.skill_id
+			answer_sequence = []
+			new_response = StudentResponse(student = current_user, problem = problem, correct_or_wrong = evaluation[question_id],skill = skill)
+			new_response.save()
 		responses = StudentResponse.objects.filter(student = current_user,skill = skill)
 		administered_items = {response.problem.id:response.correct_or_wrong for response in responses }
 		print("Administered Items:",administered_items)
 		irt_params = []
 		estimator_params = []
 		current_theta = SkillStats.objects.get(skill = skill).theta
-
 		all_problems = Problem.objects.filter(skill_id = skill)
 		index_problem = {}
 		index_list = []
+		answer_sequence = []
 		for id,problem in enumerate(all_problems):
 			irt_param = []
 			estimator_param = []
@@ -337,8 +482,6 @@ def initialize_skill(request,id):
 				answer_sequence.append(int(administered_items[problem.id]))
 				estimator_params.append(estimator_param)
 
-
-		
 		irt_params = np.array(irt_params)
 		estimator_params = np.array(estimator_params)
 		estimator = DifferentialEvolutionEstimator(bounds = (-4,4))
@@ -349,22 +492,22 @@ def initialize_skill(request,id):
 		new_theta = estimator.estimate(response_vector = answer_sequence, administered_items = estimator_params, current_theta = current_theta)
 		print("New Theta",new_theta)
 		print("IRT PARAMS:",irt_params)
+		if len(all_problems) == len(index_list):
+			return render(request,'errorpage.html',{'message':'Sorry we are out of problems for this skill. We are still working on it and it will be uploaded soon!'})
 		selector = MaxInfoSelector().select(items= irt_params,administered_items=index_list,est_theta= new_theta)
 		print(selector)
 		next_question = Problem.objects.get(id = index_problem[selector])
 		print(next_question)
 		response_dict = {'question':next_question,'theta':new_theta}
 		SkillStats.objects.filter(skill = skill).update(theta = new_theta)
-		pred_file = open("tutor_v1/datasets/predictions.txt","r")
+		pred_file = open("tutor_v2/datasets/predictions.txt","r")
 		diff_array = []
 		for line in pred_file.readlines():
 			diff = line.split('\t')
 			diff_array.append(float(diff[0]))
-
 		mastery = max(diff_array)
-
 		response_dict['mastery'] = str(mastery*100)+'%'
 		return render(request,'problem.html',response_dict)
 
 
-
+"""

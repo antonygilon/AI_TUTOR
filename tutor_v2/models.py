@@ -44,6 +44,7 @@ PROBLEM_SUBTYPE = (
 	(TEST,'custom_test'),
 
 		)
+
 class Student(models.Model):
 	user = models.OneToOneField(User, on_delete = models.CASCADE)
 	institution_name = models.CharField(max_length = 40,null=True)
@@ -116,8 +117,8 @@ class StudentResponse(models.Model):
 class DiagnosticTestResponse(models.Model):
 	student_id = models.ForeignKey(Student, on_delete = models.CASCADE)
 	problem_id = models.ForeignKey(Problem,on_delete = models.CASCADE)
-	answer = models.CharField(max_length = 100)
 	correct_or_wrong = models.BooleanField()
+	skill = models.ForeignKey(Skill, on_delete = models.CASCADE)
 
 
 class StudentResult(models.Model):
@@ -145,5 +146,3 @@ class SkillStats(models.Model):
 	student = models.ForeignKey(Student, on_delete = models.CASCADE)
 	skill  = models.ForeignKey(Skill, on_delete = models.CASCADE)
 	theta = models.FloatField()
-
-
