@@ -63,14 +63,14 @@ class Skill(models.Model):
 
 class Problem(models.Model):
 
-	answer_type = models.ForeignKey(ContentType,on_delete = 'CASCADE')
+	answer_type = models.ForeignKey(ContentType,on_delete = models.CASCADE)
 	answer_id = models.PositiveIntegerField()
 	answer_object = GenericForeignKey('answer_type','answer_id')
 	problem_name = models.CharField(max_length = 15,null = True,blank = True)
 	problem_text = models.CharField(max_length = 1000)
 	skill_id = models.ForeignKey(Skill,on_delete = models.CASCADE)
 	pub_date = models.DateTimeField('date published',auto_now_add = True)
-	difficulty_level = models.CharField(max_length=10,choices = DIFFICULTY_CHOICES, default = EASY,)
+	difficulty_level = models.CharField(max_length=100,choices = DIFFICULTY_CHOICES, default = EASY,)
 	question_score = models.IntegerField(default=1)
 	diagnostic_test = models.BooleanField(default=1)
 

@@ -1,0 +1,113 @@
+{"intents": [
+        {"tag": "greeting",
+         "patterns": ["Hi there", "How are you", "Is anyone there?","Hey","Hola", "Hello", "Good day"],
+         "responses": ["Hello, thanks for asking", "Good to see you again", "Hi there, how can I help?"],
+         "context": [""]
+        },
+        {"tag": "goodbye",
+         "patterns": ["Bye", "See you later", "Goodbye", "Nice chatting to you, bye", "Till next time"],
+         "responses": ["See you!", "Have a nice day", "Bye! Come back again soon."],
+         "context": [""]
+        },
+        {"tag": "thanks",
+         "patterns": ["Thanks", "Thank you", "That's helpful", "Awesome, thanks", "Thanks for helping me"],
+         "responses": ["Happy to help!", "Any time!", "My pleasure"],
+         "context": [""]
+        },
+        {"tag": "noanswer",
+         "patterns": [],
+         "responses": ["Sorry, can't understand you", "Please give me more info", "Not sure I understand"],
+         "context": [""]
+        },
+        {"tag": "options",
+         "patterns": ["How you could help me?", "What you can do?", "What help you provide?", "How you can be helpful?", "What support is offered"],
+         "responses": ["I can guide you through debugging errors and answer various questions related to c++", "Offering support for debugging errors and clarify basic questions on c++"],
+         "context": [""]
+        },
+	{"tag": "stl",
+         "patterns": ["List out the STL","What are the various datastructures in STL","STL"],
+         "responses": ["Vector,list,forward_list,deque,queue,prority_queue,set,map,multimap,unordered_map,set,unordered_set"],
+         "context": [""]
+        },
+	{"tag": "vector",
+         "patterns": ["vector","VECTOR","List out the vector functions","What are the various functions in vector","Help vector"],
+         "responses": ["Vectors are same as dynamic arrays with the ability to resize itself automatically when an element is inserted or deleted, with their storage being handled automatically by the container.\nvector<int/char/string/float> v \n v.push_back(variable/number/character), \nbegin(),end(),size()"],
+         "context": [""]
+        },
+        {"tag": "error1",
+         "patterns": ["'cout' undeclared","'cin' undeclared","Each undeclared identifier is reported only once for each function it appears in"],
+         "responses": ["You forgot to include <iostream>","You forgot to include 'using namespace std'"],
+         "context": [""]
+        },
+	{"tag": "error2",
+         "patterns": ["error : 'a' was not declared on this scope","error : 'b' was not declared on this scope","error : 'name' was not declared on this scope","error : 'word' was not declared on this scope","error : 'letter' was not declared on this scope"],
+         "responses": ["You did not declare the identifier"],
+         "context": [""]
+        },
+	{"tag": "error3",
+         "patterns": ["error : expected initializer before ‘==’ token","=="],
+         "responses": ["'=' instead of '=='"],
+         "context": [""]
+        },
+	{"tag": "error14",
+         "patterns": ["expected initializer before ‘.’ token","."],
+         "responses": ["Instead of semicolon, you have used dot/some other symbol"],
+         "context": [""]
+        },
+	{"tag": "error4",
+         "patterns": ["warning: suggest parentheses around assignment used as truth value"],
+         "responses": ["'==' instead of '='"],
+         "context": [""]
+        },
+	{"tag": "error5",
+         "patterns": ["undefined reference to `print(int)'","undefined reference to `func(int,char)'","undefined reference to `check(string,int,char)'"],
+         "responses": ["You misspelled the name of the function","Incorrect parameter list"],
+         "context": [""]
+        },
+	{"tag": "error6",
+         "patterns": ["In function `_start':","undefined reference to `main'"],
+         "responses": ["You compiled a .cpp that does not contain main( )"],
+         "context": [""]
+        },
+	{"tag": "error7",
+         "patterns": ["error: expected ';' before '}' token","expected ‘;’ before ‘return’"],
+         "responses": ["Missing semicolon / paranthesis on the error line or the line before."],
+         "context": [""]
+        },
+	{"tag": "error8",
+         "patterns": ["In function `int main()':","no match for `_IO_istream_withassign & << float &'"],
+         "responses": ["Replace << with >>"],
+         "context": [""]
+        },
+	{"tag": "error9",
+         "patterns": ["In function `int main()':","no match for `_IO_istream_withassign & >> float &'"],
+         "responses": ["Replace >> with <<"],
+         "context": [""]
+        },
+	{"tag": "error10",
+         "patterns": ["‘std::__cxx11::string {aka class std::__cxx11::basic_string<char>}’ has no member named"],
+         "responses": ["The member function does not exist"],
+         "context": [""]
+        },
+	{"tag": "error11",
+         "patterns": ["In function `int main()':","no match for `_IO_istream_withassign & >> float &'"],
+         "responses": ["Replace >> with <<"],
+         "context": [""]
+        },
+	{"tag": "error12",
+         "patterns": ["error : invalid conversion from ‘const char*’ to ‘int’ [-fpermissive]"],
+         "responses": ["The datatype and the corresponding value do not match"],
+         "context": [""]
+        },
+	{"tag": "error13",
+         "patterns": ["size of array has non-integral type ‘double’"],
+         "responses": ["Arrray can only take int values"],
+         "context": [""]
+        },
+	{"tag": "error15",
+         "patterns": ["array must be initialized with a brace-enclosed initializer"],
+         "responses": ["Use braces to enclose array. eg : int a[5]={1,2,3,4,5};"],
+         "context": [""]
+        }
+   ]
+}

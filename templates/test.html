@@ -1,0 +1,18 @@
+<form action="upload" method="post">
+    {% csrf_token %}
+    Question:<br>
+    <textarea name="question"></textarea><br>
+    choice 1:<br>
+    <input type="text" name="choice1"><br>
+    choice 2:<br>
+    <input type="text" name="choice2"><br>
+    choice 3:<br>
+    <input type="text" name="choice3"><br>
+    choice 4:<br>
+    <input type="text" name="choice4"><br>
+    Answer:<br>
+    <input type="text" name="answer"><br>
+
+    <br>
+    <input type="submit" value="Upload">
+  </form> 

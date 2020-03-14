@@ -1,0 +1,16 @@
+<center><h2>DIAGNOSTIC TEST</h2></center>
+
+<form action="score" method="POST">
+  
+    {% for question in Questions %}
+    {% csrf_token %}
+    <h4>{{question.statement}}</h4>
+  <input type="radio" name="{{question.statement}}" value="A" checked>{{question.choice1}}<br>
+  <input type="radio" name="{{question.statement}}" value="B"> {{question.choice2}}<br>
+  <input type="radio" name="{{question.statement}}" value="C"> {{   question.choice3}}<br>
+  <input type="radio" name="{{question.statement}}" value="D"> {{question.choice4}}<br>
+  <hr>
+    {% endfor %} 
+    
+    <input type="submit" value="SUBMIT">
+</form> 

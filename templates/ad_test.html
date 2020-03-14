@@ -1,0 +1,38 @@
+<br>
+<hr>
+<center><h2 bgcolor="blue">ADAPTIVE TEST</h2></center>
+<hr>
+<br><br><br>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+<style>
+  .bg-1 {
+    background-color: #0080ff; /* Green */
+    color: #ffffff;
+  }
+  </style>
+<form action="dynamic_test" method="POST">
+  
+    
+    {% csrf_token %}
+    <center>
+      <div class="jumbotron bg-1 text-center">
+   <h4> QUESTION NO:{{question.question_no}}</h4><input type='text' value="{{question.question_no}}" name="id">
+    
+    <h4>{{question.statement}}</h4>
+  <input type="radio" name="{{question.question_no}}" value="A" >{{question.choice1}}<br>
+  <input type="radio" name="{{question.question_no}}" value="B"> {{question.choice2}}<br>
+  <input type="radio" name="{{question.question_no}}" value="C"> {{question.choice3}}<br>
+  <input type="radio" name="{{question.question_no}}" value="D"> {{question.choice4}}<br>
+  <hr>
+    </div>
+    <input type="submit" class="btn btn-primary" value="Next Question">
+</form> 
+<form action="help" method="POST">
+  {% csrf_token %}
+  <br>
+  <input type="submit" class="btn btn-primary" value="Get Help"> 
+</center>
