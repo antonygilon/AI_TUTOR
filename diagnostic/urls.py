@@ -15,11 +15,5 @@ urlpatterns = [
     path('score',views.score,name="score"),
     path('dynamic_test',views.dynamic_test,name="dynamic_test"),
     path('dynamic_test2',views.dynamic_test2,name="dynamic_test2"),
-    path('help',views.help,name="help"),
-
-    
-    
-    
-  
 
 ]

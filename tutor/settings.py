@@ -33,6 +33,7 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     'diagnostic.apps.DiagnosticConfig',
     'tutor_v2.apps.TutorV2Config',
+    'chatbot.apps.ChatbotConfig',
     'accounts.apps.AccountsConfig',
     'django.contrib.admin',
     'django.contrib.auth',
